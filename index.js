@@ -8,17 +8,45 @@ const tempOverview=fs.readFileSync(`${__dirname}/templates/templateOverview.html
 const tempCard=fs.readFileSync(`${__dirname}/templates/templateCard.html`,'utf-8');
 const data=fs.readFileSync(`${__dirname}/dev-data/data.json`,'utf-8');
 const dataObj=JSON.parse(data);
-// console.log(tempCard);
+ 
 
-
+const replaceTemplate = (template, product) => {
+    let output = template.replace(/{%productName%}/g, product.productName);
+    output = output.replace(/{%id%}/g, product.id);
+    output = output.replace(/{%image%}/g, product.image);
+    output = output.replace(/{%from%}/g, product.from);
+    output = output.replace(/{%nutrients%}/g, product.nutrients);
+    output = output.replace(/{%quantity%}/g, product.quantity);
+    output = output.replace(/{%price%}/g, product.price);
+    output = output.replace(/{%description%}/g, product.description);
+    if(!product.organic){
+        output=output.replace(/{%isOrganic%}/g,'not-organic');
+    }
+    return output;
+}
 
 const server=http.createServer((req,res)=>{
-    const pathName=req.url;
-    if(pathName=='/overview' || pathName=='/'){
-        res.end("This is overview");
-    }else if(pathName=='/product'){
-        res.end("Product page");
-    }else if(pathName=='/api'){
+    const { query , pathname} = url.parse(req.url,true);
+
+    if(pathname=='/overview' || pathname=='/'){
+        res.writeHead(200,{
+            'content-type':'text/html'
+        });
+
+        const cards=dataObj.map(el => replaceTemplate(tempCard,el));
+        const output=tempOverview.replace(/{%cards%}/g,cards);
+        res.end(output);
+    }else if(pathname=='/product'){
+
+        res.writeHead(200,{
+            'content-type':'text/html'
+        });
+
+        const product = dataObj[query.id];
+        
+        const output= replaceTemplate(tempProduct , product);
+        res.end(output);
+    }else if(pathname=='/api'){
         
         // 1. read json file  ||
         //                    ||=> These two steps are done sync. in the beg; 
